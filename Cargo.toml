@@ -1,0 +1,8 @@
+[package]
+authors = ["johnt7_@hotmail.com"]
+edition = "2018"
+name = "led-roulette1"
+version = "0.0.1"
+
+[dependencies]
+aux5 = { path = "auxiliary" }
