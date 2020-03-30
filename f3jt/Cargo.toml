@@ -1,8 +1,8 @@
 [package]
-authors = ["Jorge Aparicio <jorge@japaric.io>"]
+authors = ["johnt7_@hotmail.com"]
 edition = "2018"
-name = "aux5"
-version = "0.1.0"
+name = "f3jt"
+version = "0.0.1"
 
 [dependencies]
 cortex-m = "0.5.6"
