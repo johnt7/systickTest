@@ -3,6 +3,7 @@
 #[allow(unused_extern_crates)] // NOTE(allow) bug rust-lang/rust#53964
 extern crate panic_halt; // panic handler
 
+#[allow(unused_imports)]
 pub use cortex_m::asm::{bkpt, nop};
 pub use cortex_m::{iprint, iprintln};
 pub use cortex_m_rt::{entry, exception, ExceptionFrame};
@@ -20,22 +21,23 @@ pub use f3::{
 };
 
 pub fn init() -> (Leds, Button, ITM) {
-    let mut cp = cortex_m::Peripherals::take().unwrap();
+    let cp = cortex_m::Peripherals::take().unwrap();
     let dp = stm32f30x::Peripherals::take().unwrap();
 
-    let mut flash = dp.FLASH.constrain();
     let mut rcc = dp.RCC.constrain();
 
-    let clocks = rcc.cfgr.freeze(&mut flash.acr);
+//    let mut flash = dp.FLASH.constrain();
+//    let clocks = rcc.cfgr.freeze(&mut flash.acr);
+//    let delay = Delay::new(cp.SYST, clocks);
+
+    // set up systick interupt handler
     let mut systick = cp.SYST;
-    let rvr: u32 = 1_000;
+    let rvr: u32 = 1_000_000_000;
     systick.set_clock_source(syst::SystClkSource::Core);
     systick.set_reload(rvr);
     systick.clear_current();
     systick.enable_counter();
     systick.enable_interrupt();
-
-//    let delay = Delay::new(cp.SYST, clocks);
 
     let leds = Leds::new(dp.GPIOE.split(&mut rcc.ahb));
     let (button, _) = create_lev(dp.GPIOA.split(&mut rcc.ahb));

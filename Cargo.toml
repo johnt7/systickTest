@@ -8,3 +8,5 @@ version = "0.0.1"
 f3jt = { path = "f3jt" }
 cortex-m-rt = "0.6.3"
 cortex-m-semihosting = "0.3.0"
+heapless = "0.5.3"
+cortex-m = ""
