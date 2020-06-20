@@ -13,11 +13,11 @@
 use f3jt::{entry, prelude::*, Leds, Button, exception, bkpt, nop, ExceptionFrame, ITM, iprint, iprintln, gpio, gpioa};
 use heapless::spsc::Queue;
 use heapless::consts::*;
-use cortex_m::singleton;
+//use cortex_m::singleton;
 
-static mut toInt: Queue<usize, U4> = Queue(heapless::i::Queue::new());
-static mut fromInt: Queue<usize, U4> = Queue(heapless::i::Queue::new());
-static mut Sleds: Option<Leds> = None;
+static mut TOINT: Queue<usize, U4> = Queue(heapless::i::Queue::new());
+static mut FROMINT: Queue<usize, U4> = Queue(heapless::i::Queue::new());
+static mut SLEDS: Option<Leds> = None;
 #[entry]
 fn main() -> ! {
     /*
@@ -25,9 +25,10 @@ fn main() -> ! {
     let (frmSysSrc, frmSysSink) = channel();
     */
     let (mut leds, button, mut itm): (Leds, Button, ITM) = f3jt::init();
-    unsafe { Sleds = Some(leds); }
-    let mut incoming = unsafe { fromInt.split().1 };
-    let mut outgoing = unsafe { toInt.split().0 };
+    unsafe { SLEDS = Some(leds); }
+    let mut incoming = unsafe { FROMINT.split().1 };
+    let mut outgoing = unsafe { TOINT.split().0 };
+    let mut bc = 0;
 //    let mut outtest = unsafe { fromInt.split().0 };
 
     // set pa0 as input
@@ -51,17 +52,23 @@ fn main() -> ! {
     let mut count : usize = 0;
     loop {
         iprintln!(&mut itm.stim[0], "top of loop");
-        outgoing.enqueue(count).ok().unwrap();
+//        outgoing.enqueue(count).ok().unwrap();
         iprintln!(&mut itm.stim[0], "enqueued ct={}", count);
     
         if button.is_pushed() {
-            iprintln!(&mut itm.stim[0], "pushed");
+//            iprintln!(&mut itm.stim[0], "pushed");
             //leds[0].on();
-            while button.is_pushed() {};
-            //leds[0].off();
-            iprintln!(&mut itm.stim[0], "released");
+            bc += 1;
+             //leds[0].off();
+//            iprintln!(&mut itm.stim[0], "released");
+        } else {
+            if bc > 100 {
+                iprintln!(&mut itm.stim[0], "found push");
+                outgoing.enqueue(bc).ok().unwrap();
+            }
+            bc = 0;
         }
-
+/*
         while !incoming.ready() {};
 
         match incoming.dequeue() {
@@ -72,9 +79,8 @@ fn main() -> ! {
                 iprintln!(&mut itm.stim[0], "x");
             }
         };
-
+*/
         count += 1;
-        for j in 1..1_000 {};
     }
 }
 
@@ -90,34 +96,44 @@ fn SysTick() {
     }
     x += 1;
 */
-    let mut incoming = unsafe { toInt.split().1 };
-    let mut outgoing = unsafe { fromInt.split().0 };
+    let mut incoming = unsafe { TOINT.split().1 };
+    let mut outgoing = unsafe { FROMINT.split().0 };
 
-    static mut count: u16 = 0;
+    static mut COUNT: u16 = 0;
+    static mut WHICHLED: u8 = 0;
+    static mut PREVLED: u8 = 0;
 //    static mut sleds: Leds = unsafe { Sleds.take().unwrap() };
 //    static mut sleds: Option<Leds> = None;
-    static mut started: [bool; NUMSIGS] = [false, false];
-    static mut start: [u16; NUMSIGS] = [0,12];
-    static mut end: [u16; NUMSIGS] = [12,0];
-    static mut _ports: [u16; NUMSIGS] = [0,0];
+    static mut STARTED: [bool; NUMSIGS] = [false, false];
+    static mut START: [u16; NUMSIGS] = [0,12];
+    static mut END: [u16; NUMSIGS] = [12,0];
+    static mut _PORTS: [u16; NUMSIGS] = [0,0];
 /*
     unsafe {
         if let Some(x) = Sleds.take() {
                 sleds = Some(x);
         }
     }
-*/
-    let ctp = unsafe {&mut count};
+*/  
+    let ctp = unsafe {&mut COUNT};
+    let ledct = unsafe {&mut WHICHLED};
+    let prevct = unsafe {&mut PREVLED};
     *ctp += 1;
     
 
-    let ctp = unsafe {&mut count};
-    let _startedp = unsafe {&mut started};
-    let _startp = unsafe {&mut start};
-    let _endp = unsafe {&mut end};
+    let ctp = unsafe {&mut COUNT};
+    let _startedp = unsafe {&mut STARTED};
+    let _startp = unsafe {&mut START};
+    let _endp = unsafe {&mut END};
     unsafe {
-            match Sleds {
-                Some(ref mut x) => x[2].on(),
+            match SLEDS { // https://github.com/rust-lang/rust/issues/28839
+                Some(ref mut x) => { 
+                    x[*prevct as usize].off();
+                    x[*ledct as usize].on();
+//                    let mut x1 = &mut x[1];
+
+//                    x1.on();
+                 },
                 None => panic!()
 
         }
