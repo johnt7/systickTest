@@ -1,7 +1,7 @@
 [package]
 authors = ["johnt7_@hotmail.com"]
 edition = "2018"
-name = "sysTest"
+name = "sys_test"
 version = "0.0.1"
 
 [dependencies]

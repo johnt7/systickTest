@@ -132,81 +132,82 @@ fn SysTick() {
         s_count: [12,0]
     };
     let lstatp = unsafe { &mut LSTAT };
-    static mut COUNT: u16 = 0;
-    static mut SIGCOUNT: u8 = 0;
-    static mut WHICHLED: u8 = 0;
-    static mut PREVLED: u8 = 0;
-    static mut FL: bool = false;
+
+//    static mut COUNT: u16 = 0;
+//    static mut SIGCOUNT: u8 = 0;
+//    static mut WHICHLED: u8 = 0;
+//    static mut PREVLED: u8 = 0;
+//    static mut FL: bool = false;
 //    static mut sleds: Leds = unsafe { Sleds.take().unwrap() };
 //    static mut sleds: Option<Leds> = None;
-    static mut STARTED: [bool; NUMSIGS as usize] = [false, false];
-    static mut START: [u8; NUMSIGS as usize] = [0,12];
-    static mut SCOUNT: [u8; NUMSIGS as usize] = [12,0];
+//    static mut STARTED: [bool; NUMSIGS as usize] = [false, false];
+//    static mut START: [u8; NUMSIGS as usize] = [0,12];
+//    static mut SCOUNT: [u8; NUMSIGS as usize] = [12,0];
 
-    let ledct = unsafe {&mut WHICHLED};
-    let prevct = unsafe {&mut PREVLED};
-    let flState = unsafe {&mut FL};
+//    let ledct = unsafe {&mut WHICHLED};
+//    let prevct = unsafe {&mut PREVLED};
+//    let flState = unsafe {&mut FL};
     
 
-    let ctp = unsafe {&mut COUNT};
-    let startedp = unsafe {&mut STARTED};
-    let startp = unsafe {&mut START};
-    let countp = unsafe {&mut SCOUNT};
-    let sigcountp = unsafe {&mut SIGCOUNT};
+//    let ctp = unsafe {&mut COUNT};
+//    let startedp = unsafe {&mut STARTED};
+//    let startp = unsafe {&mut START};
+//    let countp = unsafe {&mut SCOUNT};
+//    let sigcountp = unsafe {&mut SIGCOUNT};
 
     static mut _PORTS: [u16; NUMSIGS as usize] = [0,0];
 
 
-    *flState = !*flState;
+    lstatp.fl = !lstatp.fl;
     unsafe {
         match SLEDS { // https://github.com/rust-lang/rust/issues/28839
             Some(ref mut x) => { 
-                x[*prevct as usize].off();
-                if *flState {
-                    x[*ledct as usize].on();
+                x[lstatp.prev_led as usize].off();
+                if lstatp.fl {
+                    x[lstatp.which_led as usize].on();
                 } else {
-                    x[*ledct as usize].off();
+                    x[lstatp.which_led as usize].off();
                 }
                 },
             None => panic!()
         }
         match SPORTS { // https://github.com/rust-lang/rust/issues/28839
             Some(ref mut outps) => { 
-                    write_line(&*startedp, outps)
+                    write_line(&lstatp.started, outps)
                  },
             None => panic!()
         }
     }
     
     for s in 0..NUMSIGS as usize {
-        if startedp[s] {
-            if countp[s] > NUMSIGS/2 {
-                startedp[s] = false;
-                countp[s] = 0;
+        if lstatp.started[s] {
+            if lstatp.s_count[s] > NUMSIGS/2 {
+                lstatp.started[s] = false;
+                lstatp.s_count[s] = 0;
             } else {
-                countp[s] = inc_mod(countp[s], NUMSIGS);
+                lstatp.s_count[s] = inc_mod(lstatp.s_count[s], NUMSIGS);
             }
-        } else if *sigcountp == startp[s] {
-            startedp[s] = true;
-            countp[s] = 0;
+        } else if lstatp.sig_count == lstatp.start[s] {
+            lstatp.started[s] = true;
+            lstatp.s_count[s] = 0;
         }
     }
-    *sigcountp = inc_mod(*sigcountp, NUMSIGS);
+    lstatp.sig_count = inc_mod(lstatp.sig_count, NUMSIGS);
 
     // send out a tick to main
-    *ctp += 1;
-    if *ctp > 10_000 {
-        outgoing.enqueue(*ctp as usize).ok().unwrap();
-        *ctp = 0;
+    lstatp.count += 1;
+    if  lstatp.count > 10_000 {
+        outgoing.enqueue(lstatp.count as usize).ok().unwrap();
+        lstatp.count = 0;
 
     }
     if incoming.ready() {
         match incoming.dequeue() {
             Some(_) => {
-                *prevct = *ledct;
-                *ledct += 1;
-                if *ledct >= NUMLEDS {
-                    *ledct = 0;
+                lstatp.prev_led = lstatp.which_led;
+                lstatp.which_led += 1;
+                if lstatp.which_led >= NUMLEDS {
+                    lstatp.which_led = 0;
                 }
             },
             None => panic!()

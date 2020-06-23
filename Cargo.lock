@@ -306,7 +306,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sysTest"
+name = "sys_test"
 version = "0.0.1"
 dependencies = [
  "cortex-m 0.5.10",
