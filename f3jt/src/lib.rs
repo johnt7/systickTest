@@ -20,7 +20,10 @@ pub use f3::{
     led::Leds,
 };
 
-pub fn init() -> (Leds, Button, ITM) {
+//pub const RVR: u32 = 7_500_000;
+pub const RVR: u32 = 9_000;
+
+pub fn init() -> (Leds, Button, ITM, OutPorts) {
     let cp = cortex_m::Peripherals::take().unwrap();
     let dp = stm32f30x::Peripherals::take().unwrap();
 
@@ -32,17 +35,16 @@ pub fn init() -> (Leds, Button, ITM) {
 
     // set up systick interupt handler
     let mut systick = cp.SYST;
-    let rvr: u32 = 1_000_000_000;
     systick.set_clock_source(syst::SystClkSource::Core);
-    systick.set_reload(rvr);
+    systick.set_reload(RVR);
     systick.clear_current();
     systick.enable_counter();
     systick.enable_interrupt();
 
     let leds = Leds::new(dp.GPIOE.split(&mut rcc.ahb));
-    let (button, _) = create_lev(dp.GPIOA.split(&mut rcc.ahb));
+    let (button, outp) = create_lev(dp.GPIOA.split(&mut rcc.ahb));
        
-    (leds, button, cp.ITM) 
+    (leds, button, cp.ITM, outp) 
 }
 
 fn create_lev(mut gpa: gpioa::Parts) -> (Button, OutPorts) {

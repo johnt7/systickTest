@@ -192,17 +192,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "led-roulette1"
-version = "0.0.1"
-dependencies = [
- "cortex-m 0.5.10",
- "cortex-m-rt",
- "cortex-m-semihosting",
- "f3jt",
- "heapless",
-]
-
-[[package]]
 name = "lsm303dlhc"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -314,6 +303,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-xid",
+]
+
+[[package]]
+name = "sysTest"
+version = "0.0.1"
+dependencies = [
+ "cortex-m 0.5.10",
+ "cortex-m-rt",
+ "cortex-m-semihosting",
+ "f3jt",
+ "heapless",
 ]
 
 [[package]]
