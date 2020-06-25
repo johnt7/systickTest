@@ -130,6 +130,7 @@ version = "0.0.1"
 dependencies = [
  "cortex-m 0.5.10",
  "cortex-m-rt",
+ "embedded-hal",
  "f3",
  "panic-halt",
 ]

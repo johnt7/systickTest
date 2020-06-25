@@ -19,9 +19,14 @@ pub use f3::{
     },
     led::Leds,
 };
+//use embedded_hal::digital::v2::OutputPin;
 
-//pub const RVR: u32 = 7_500_000;
 pub const RVR: u32 = 9_000;
+
+
+// PA0 - input from user (blue) button
+// PA1, PA2 - signal for one channel
+// PA3, PA3 - signal for second channel
 
 pub fn init() -> (Leds, Button, ITM, OutPorts) {
     let cp = cortex_m::Peripherals::take().unwrap();
@@ -74,10 +79,10 @@ impl Button {
 }
 
 pub struct OutPorts {
-    pa1 : gpioa::PA1<gpio::Output<gpio::PushPull>>,
-    pa2 : gpioa::PA2<gpio::Output<gpio::PushPull>>,
-    pa3 : gpioa::PA3<gpio::Output<gpio::PushPull>>,
-    pa4 : gpioa::PA4<gpio::Output<gpio::PushPull>>
+    pub pa1 : gpioa::PA1<gpio::Output<gpio::PushPull>>,
+    pub pa2 : gpioa::PA2<gpio::Output<gpio::PushPull>>,
+    pub pa3 : gpioa::PA3<gpio::Output<gpio::PushPull>>,
+    pub pa4 : gpioa::PA4<gpio::Output<gpio::PushPull>>
 }
 
 /*

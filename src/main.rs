@@ -10,6 +10,7 @@
  * ******/
 #[allow(unused_imports)]
 use f3jt::{entry, prelude::*, Leds, Button, exception, bkpt, nop, ExceptionFrame, ITM, iprint, iprintln, gpio, gpioa, OutPorts, RVR};
+//use f3jt::{entry, Leds, Button, exception, bkpt, nop, ExceptionFrame, ITM, iprint, iprintln, gpio, gpioa, OutPorts, RVR};
 use heapless::spsc::Queue;
 use heapless::consts::*;
 //use cortex_m::singleton;
@@ -32,27 +33,10 @@ fn main() -> ! {
     let mut bc = 0;
     let mut count : usize = 0;
 
-    // set pa0 as input
-//    let f = gpa.pa0.into_floating_input(&mut gpa.moder, &mut gpa.pupdr);
-//    let g = gpa.pa1.into_push_pull_output(&mut gpa.moder, &mut gpa.otyper);
-
-    // PA0 - input from user (blue) button
-    // PA1, PA2 - signal for one channel
-    // PA3, PA3 - signal for second channel
-      
-    // implment arduino, with start and length
-    // add counter to see how long processing is taking
-    // 4 output pins, 2 each for two signals.  
-    // each signal has two lines, with oposite values 01, 10
-
-    // signals to and from systick
-    // talk to ports in systick
-
     iprintln!(&mut itm.stim[0], "\n\nHello, world! cl={}", RVR);
-
     loop {
     
-        // debounce, need to loop through a few times to make sure button is properly pushed
+        // debounce, loop through a few times to make sure button is properly pushed
         if button.is_pushed() {
             bc += 1;
         } else {
@@ -65,6 +49,7 @@ fn main() -> ! {
             }
             bc = 0;
         }
+
         // check for message back from fast code
         if incoming.ready() {
             match incoming.dequeue() {
@@ -86,6 +71,7 @@ fn main() -> ! {
     }
 }
 
+/// increment a number modulo modv
 fn inc_mod(num: u8, modv: u8) -> u8 {
     let mut res = num + 1;
     if res >= modv {
@@ -94,15 +80,56 @@ fn inc_mod(num: u8, modv: u8) -> u8 {
     res
 }
 
-fn write_line(_started: &[bool], _outp: &mut OutPorts) {
-    // write to port for line, high or low based on level
+
+// PA0 - input from user (blue) button
+// PA1, PA2 - signal for one channel
+// PA3, PA3 - signal for second channel
+    
+// 4 output pins, 2 each for two signals.  
+// each signal has two lines, with oposite values 01, 10
+fn write_line(sigs: &[SigState], outp: &mut OutPorts) {
+    if sigs[0].started {
+        outp.pa1.set_high();
+        outp.pa2.set_low();
+    } else {
+        outp.pa1.set_low();
+        outp.pa2.set_high();
+    }
+    if sigs[1].started {
+        outp.pa3.set_high();
+        outp.pa4.set_low();
+    } else {
+        outp.pa3.set_high();
+        outp.pa4.set_low();
+    }
 }
 
 /*
 */
 const NUMSIGS: u8 = 2;
-const _STEPS: u8 = 24;
-static NUMLEDS: u8 = 8;
+const STEPS: u8 = 24;
+const NUMLEDS: u8 = 8;
+
+struct SigState {
+    started: bool,
+    start: u8,
+    counter: u8
+}
+impl SigState {
+    fn next_step(&mut self, ct: u8) {
+        if self.started {
+            if self.counter > STEPS/2 {
+                self.started = false;
+                self.counter = 0;
+            } else {
+                self.counter = inc_mod(self.counter, STEPS);
+            }
+        } else if ct == self.start {
+            self.started = true;
+            self.counter = 0;
+        }
+    }
+}
 
 struct SysTickStatic {
     pub count : u16,
@@ -110,89 +137,53 @@ struct SysTickStatic {
     which_led: u8,
     prev_led: u8,
     fl: bool,
-    started: [bool; NUMSIGS as usize],
-    start: [u8; NUMSIGS as usize],
-    s_count: [u8; NUMSIGS as usize]
+    sigs: [SigState; NUMSIGS as usize]
 }
+
+static mut LSTAT:  SysTickStatic = SysTickStatic {
+    count: 0,
+    sig_count: 0,
+    which_led: 0,
+    prev_led: 0,
+    fl: false,
+    sigs: [SigState {started:false, start: 0, counter: 0}, SigState {started:false, start: 0, counter: 0}]
+};
+
 
 #[exception]
 fn SysTick() {
 
+    let mut lstatp = unsafe { &mut LSTAT };
     let mut incoming = unsafe { TOINT.split().1 };
     let mut outgoing = unsafe { FROMINT.split().0 };
-
-    static mut LSTAT:  SysTickStatic = SysTickStatic {
-        count: 0,
-        sig_count: 0,
-        which_led: 0,
-        prev_led: 0,
-        fl: false,
-        started: [false, false],
-        start: [0,12],
-        s_count: [12,0]
-    };
-    let lstatp = unsafe { &mut LSTAT };
-
-//    static mut COUNT: u16 = 0;
-//    static mut SIGCOUNT: u8 = 0;
-//    static mut WHICHLED: u8 = 0;
-//    static mut PREVLED: u8 = 0;
-//    static mut FL: bool = false;
-//    static mut sleds: Leds = unsafe { Sleds.take().unwrap() };
-//    static mut sleds: Option<Leds> = None;
-//    static mut STARTED: [bool; NUMSIGS as usize] = [false, false];
-//    static mut START: [u8; NUMSIGS as usize] = [0,12];
-//    static mut SCOUNT: [u8; NUMSIGS as usize] = [12,0];
-
-//    let ledct = unsafe {&mut WHICHLED};
-//    let prevct = unsafe {&mut PREVLED};
-//    let flState = unsafe {&mut FL};
-    
-
-//    let ctp = unsafe {&mut COUNT};
-//    let startedp = unsafe {&mut STARTED};
-//    let startp = unsafe {&mut START};
-//    let countp = unsafe {&mut SCOUNT};
-//    let sigcountp = unsafe {&mut SIGCOUNT};
-
-    static mut _PORTS: [u16; NUMSIGS as usize] = [0,0];
-
-
-    lstatp.fl = !lstatp.fl;
+    let ledp = unsafe { SLEDS.as_mut().unwrap() };
+    let portp = unsafe { SPORTS.as_mut().unwrap() };
+/*
     unsafe {
-        match SLEDS { // https://github.com/rust-lang/rust/issues/28839
-            Some(ref mut x) => { 
-                x[lstatp.prev_led as usize].off();
-                if lstatp.fl {
-                    x[lstatp.which_led as usize].on();
-                } else {
-                    x[lstatp.which_led as usize].off();
-                }
-                },
-            None => panic!()
-        }
-        match SPORTS { // https://github.com/rust-lang/rust/issues/28839
-            Some(ref mut outps) => { 
-                    write_line(&lstatp.started, outps)
-                 },
-            None => panic!()
-        }
-    }
-    
-    for s in 0..NUMSIGS as usize {
-        if lstatp.started[s] {
-            if lstatp.s_count[s] > NUMSIGS/2 {
-                lstatp.started[s] = false;
-                lstatp.s_count[s] = 0;
+        if let Some(ref mut x) = SLEDS {
+            x[lstatp.prev_led as usize].off();
+            if lstatp.fl {
+                x[lstatp.which_led as usize].on();
             } else {
-                lstatp.s_count[s] = inc_mod(lstatp.s_count[s], NUMSIGS);
+                x[lstatp.which_led as usize].off();
             }
-        } else if lstatp.sig_count == lstatp.start[s] {
-            lstatp.started[s] = true;
-            lstatp.s_count[s] = 0;
         }
+        write_line(&lstatp.sigs, SPORTS.as_mut().unwrap());
     }
-    lstatp.sig_count = inc_mod(lstatp.sig_count, NUMSIGS);
+*/
+    // flash LED, move if changed
+    ledp[lstatp.prev_led as usize].off();
+    if lstatp.fl {
+        ledp[lstatp.which_led as usize].on();
+    } else {
+        ledp[lstatp.which_led as usize].off();
+    }
+    // write output lines
+    write_line(&lstatp.sigs, portp);
+
+    for s in &mut lstatp.sigs {
+        s.next_step(lstatp.sig_count);
+    }
 
     // send out a tick to main
     lstatp.count += 1;
@@ -214,6 +205,8 @@ fn SysTick() {
         }
     }
     
+    lstatp.fl = !lstatp.fl;
+    lstatp.sig_count = inc_mod(lstatp.sig_count, NUMSIGS);
 /*
     let pa1 : gpioa::PA1<gpio::Output<gpio::PushPull>>;
         for i in 1..NUMSIGS {
@@ -240,14 +233,17 @@ fn SysTick() {
      */
 }
 
+#[allow(path_statements)]
 #[exception]
 fn HardFault(ef: &ExceptionFrame) -> ! {
     bkpt;
     panic!("{:#?}", ef);
 }
 
+#[allow(path_statements)]
 #[exception]
 fn DefaultHandler(irqn: i16) {
+    #[allow(path_statements)]
     bkpt;
     panic!("Unhandled exception (IRQn = {})", irqn);
 }
