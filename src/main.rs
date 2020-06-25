@@ -158,19 +158,7 @@ fn SysTick() {
     let mut outgoing = unsafe { FROMINT.split().0 };
     let ledp = unsafe { SLEDS.as_mut().unwrap() };
     let portp = unsafe { SPORTS.as_mut().unwrap() };
-/*
-    unsafe {
-        if let Some(ref mut x) = SLEDS {
-            x[lstatp.prev_led as usize].off();
-            if lstatp.fl {
-                x[lstatp.which_led as usize].on();
-            } else {
-                x[lstatp.which_led as usize].off();
-            }
-        }
-        write_line(&lstatp.sigs, SPORTS.as_mut().unwrap());
-    }
-*/
+
     // flash LED, move if changed
     ledp[lstatp.prev_led as usize].off();
     if lstatp.fl {
@@ -205,32 +193,10 @@ fn SysTick() {
         }
     }
     
-    lstatp.fl = !lstatp.fl;
-    lstatp.sig_count = inc_mod(lstatp.sig_count, NUMSIGS);
-/*
-    let pa1 : gpioa::PA1<gpio::Output<gpio::PushPull>>;
-        for i in 1..NUMSIGS {
-            if startedp[i] {
-                if startp[i] == *ctp {
-                    // write hi to port[i]
-    //                pa1.odr.write(|w| {
-     //                   w.odr1().set_bit();
-     //               });
-                    startedp[i] = true;
-                }
-            } else {
-                if endp[i] == *ctp {
-                    // write low to port[i]
-//                    pa1.set_bit();
-                    startedp[i] = false;
-                }
-            }
-        }
-        *ctp += 1;
-        if *ctp >= STEPS {
-            *ctp -= STEPS;
-    };
-     */
+    lstatp.sig_count = inc_mod(lstatp.sig_count, STEPS);
+    if lstatp.sig_count == 0 {
+        lstatp.fl = !lstatp.fl;
+    }
 }
 
 #[allow(path_statements)]
