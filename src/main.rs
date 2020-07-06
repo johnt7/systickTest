@@ -2,15 +2,11 @@
 #![no_std]
 /*********
  * TODO
- * - encapsulate button handling so no unsafe
- * - create setTimer/waitTimerClass
- * - create f3-jt crate with button handling and timer
- * - replace aux with specific for system
- * - use systtick instead of main loop
+  * - create setTimer/waitTimerClass
  * ******/
 #[allow(unused_imports)]
 use f3jt::{entry, prelude::*, Leds, Button, exception, bkpt, nop, ExceptionFrame, ITM, iprint, iprintln, gpio, gpioa, OutPorts, RVR};
-//use f3jt::{entry, Leds, Button, exception, bkpt, nop, ExceptionFrame, ITM, iprint, iprintln, gpio, gpioa, OutPorts, RVR};
+
 use heapless::spsc::Queue;
 use heapless::consts::*;
 //use cortex_m::singleton;
@@ -21,10 +17,6 @@ static mut SLEDS: Option<Leds> = None;
 static mut SPORTS: Option<OutPorts> = None;
 #[entry]
 fn main() -> ! {
-    /*
-    let (toSysSrc, toSysSink) = channel();
-    let (frmSysSrc, frmSysSink) = channel();
-    */
     let (leds, button, mut itm, outp): (Leds, Button, ITM, OutPorts) = f3jt::init();
     unsafe { SLEDS = Some(leds); }
     unsafe { SPORTS = Some(outp); }
@@ -86,7 +78,7 @@ fn inc_mod(num: u8, modv: u8) -> u8 {
 // PA3, PA3 - signal for second channel
     
 // 4 output pins, 2 each for two signals.  
-// each signal has two lines, with oposite values 01, 10
+// each signal has two lines, with opposite values 01, 10
 fn write_line(sigs: &[SigState], outp: &mut OutPorts) {
     if sigs[0].started {
         outp.pa1.set_high();
@@ -99,8 +91,8 @@ fn write_line(sigs: &[SigState], outp: &mut OutPorts) {
         outp.pa3.set_high();
         outp.pa4.set_low();
     } else {
-        outp.pa3.set_high();
-        outp.pa4.set_low();
+        outp.pa3.set_low();
+        outp.pa4.set_high();
     }
 }
 
@@ -213,3 +205,5 @@ fn DefaultHandler(irqn: i16) {
     bkpt;
     panic!("Unhandled exception (IRQn = {})", irqn);
 }
+
+// current code 37.1 hz
