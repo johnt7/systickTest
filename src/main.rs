@@ -28,7 +28,7 @@ fn main() -> ! {
     iprintln!(&mut itm.stim[0], "\n\nHello, world! cl={}", RVR);
     loop {
     
-        // debounce, loop through a few times to make sure button is properly pushed
+        // debounce, fire on release if button was pushed long enough
         if button.is_pushed() {
             bc += 1;
         } else {

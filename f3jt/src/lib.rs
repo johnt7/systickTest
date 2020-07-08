@@ -19,7 +19,7 @@ pub use f3::{
     },
     led::Leds,
 };
-//use embedded_hal::digital::v2::OutputPin;
+//use embedded_hal::digital::v2::OutputPin; how do I get v2?
 
 pub const RVR: u32 = 9_000;
 
@@ -84,34 +84,3 @@ pub struct OutPorts {
     pub pa3 : gpioa::PA3<gpio::Output<gpio::PushPull>>,
     pub pa4 : gpioa::PA4<gpio::Output<gpio::PushPull>>
 }
-
-/*
-pub struct Waiter {
-    pub tim : &'static  tim6::RegisterBlock
-}
-impl Waiter {
-    pub fn new() -> Waiter {
-        Waiter {
-            tim : 
-            unsafe {
-                &*TIM6::ptr()
-            }
-        }
-    }
-    pub fn start_timer(&mut self, ms: u16) {
-        // Set the timer to go off in `ms` ticks
-        // 1 tick = 1 ms
-        self.tim.arr.write(|w| w.arr().bits(ms));
-
-        // CEN: Enable the counter
-        self.tim.cr1.modify(|_, w| w.cen().set_bit());
-    }
-    pub fn wait_timer(&mut self) {
-        // Wait until the alarm goes off (until the update event occurs)
-        while !self.tim.sr.read().uif().bit_is_set() {}
-
-        // Clear the update event flag
-        self.tim.sr.modify(|_, w| w.uif().clear_bit());
-    }
-}
-*/
